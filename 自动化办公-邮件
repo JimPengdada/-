@@ -1,0 +1,51 @@
+# 编写者：彭畅
+# 开发时间：2022/7/13 22:07
+
+# 1 先导入相关的库和方法
+import smtplib  # 导入库
+from smtplib import SMTP_SSL  # 加密邮件内容，防止中途被截获
+from email.mime.text import MIMEText  # 构造邮件的正文
+from email.mime.image import MIMEImage  # 构造邮件的图片
+from email.mime.multipart import MIMEMultipart  # 把邮件的各个部分装在一起，邮件的主体
+from email.header import Header  # 邮件的文件头，标题，收件人
+
+# 2 设置邮箱域名、发件人邮箱、邮箱授权码、收件人邮箱
+host_server = 'smtp.163.com'  # sina 邮箱smtp服务器                 #smtp 服务器的地址
+sender_163 = 'pythonauto_emai@163.com'  # sender_163为发件人的邮箱
+pwd = 'DYEPOGLZDZYLOMRI'  # pwd为邮箱的授权码'DYEPOGLZDZYLOMRI'
+# 也可以自己注册个邮箱，邮箱授权码'DYEPOGLZDZYLOMRI' 获取方式可参考#http://help.163.com/14/0923/22/A6S1FMJD00754KNP.html
+
+# 设置接受邮箱，换成自己的邮箱即可
+receiver = '411599358@qq.com'
+
+# 3 构建MIMEMultipart对象代表邮件本身，可以往里面添加文本、图片、附件等
+msg = MIMEMultipart()  # 邮件主体
+
+# 4 设置邮件头部内容
+mail_title = 'python办公自动化邮件'  # 邮件标题
+msg["Subject"] = Header(mail_title, 'utf-8')  # 装入主体
+msg["From"] = sender_163  # 寄件人
+msg["To"] = Header("测试邮箱", 'utf-8')  # 标题
+
+# 5 添加正文文本
+mail_content = "您好,这是使用python登录163邮箱发送邮件的测试"  # 邮件的正文内容
+message_text = MIMEText(mail_content, 'plain', 'utf-8')  # 构造文本,参数1：正文内容，参数2：文本格式，参数3：编码方式
+msg.attach(message_text)  # 向MIMEMultipart对象中添加文本对象
+# 6 添加图片
+image_data = open('D:\\lianxi\\First\\auto_test\\119.png', 'rb')  # 二进制读取图片
+message_image = MIMEImage(image_data.read())  # 设置读取获取的二进制数据
+image_data.close()  # 关闭刚才打开的文件
+message_image.add_header('Content-Disposition', 'attachment', filename='filename.png')
+msg.attach(message_image)  # 添加图片文件到邮件信息当中去
+
+# 7 添加附件(excel表格)
+atta = MIMEText(open('D:\\lianxi\\First\\auto_test\\自动化邮件信息.xlsx', 'rb').read(), 'base64', 'utf-8')  # 构造附件
+atta["Content-Disposition"] = 'attachment; filename="bxj.xlsx"'  # 设置附件信息
+msg.attach(atta)  ## 添加附件到邮件信息当中去
+
+# 8 发送邮件
+smtp = SMTP_SSL(host_server)  # SSL登录 创建SMTP对象
+smtp.login(sender_163, pwd)  ## 登录邮箱，传递参数1：邮箱地址，参数2：邮箱授权码
+smtp.sendmail(sender_163, receiver, msg.as_string())  # 发送邮件，传递参数1：发件人邮箱地址，参数2：收件人邮箱地址，参数3：把邮件内容格式改为str
+print("邮件发送成功")
+smtp.quit  # 关闭SMTP对象
