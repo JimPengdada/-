@@ -1,0 +1,123 @@
+# 开发时间：2022/7/16 13:32
+import os, warnings, openpyxl
+from openpyxl import load_workbook, Workbook
+from openpyxl.styles import Font, Side, Border
+import xlwings as xw
+
+print(os.getcwd())  # 获取当前工作目录
+warnings.filterwarnings('ignore')
+root_path = './OpenPyXL_test/'
+# 导入模块，查看属性
+wb = openpyxl.load_workbook(root_path + '用户行为偏好.xlsx')
+type(wb)
+openpyxl.workbook.workbook.Workbook
+print(wb.sheetnames)  # 获取表中的子sheet名称
+active_sheet = wb.active  # 读取工作簿的活动表的对象和标题名称
+print(f'active_sheet对象：{active_sheet}')
+print(f'active_sheet标题:{active_sheet.title}')
+# 拓展知识点：活动表是可以修改的，通过传递表名字符串读取表、类型、名称内容占据的大小，get_sheet_by_name
+sheet = wb.get_sheet_by_name('Sheet3')
+print(f'sheet:{sheet}')
+print(f'sheet类型:{type(sheet)}')
+print(f'sheet标题:{sheet.title}')
+print(f'sheet内容大小:{sheet.dimensions}')
+# 获取制定sheet
+sheet = wb.get_sheet_by_name('订单时长分布')
+# 通过单元格获取单元格对象
+a = sheet['B1']
+print(f"sheet['B1']:{a}")
+# 获取并打印B1单元格的文本内容
+print(f"sheet['B1'].value:{a.value}")
+# 获取并打印 B1 单元格所在行、列和数值
+print(f"row:{a.row},column:{a.column}")
+# 获取并打印 B1 单元格坐标 和 值
+print(f"cell:{a.coordinate} is {a.value}")
+# 获取并打印出 B列 前8行的奇数行单元格的值
+for i in range(1, 8, 2):
+    print(f"奇数行:{i},{sheet.cell(row=i, column=2).value}")
+# 确定表格的最大行数和最大列数，即表的大小
+print(sheet.max_row)
+print(sheet.max_column)
+# 读取多个单元格的值
+cells = sheet['A1:C8']
+for rows in cells:
+    for cell in rows:
+        print(cell.value, end='|')
+    print('\n')
+# 综合练习1：找出用户行为偏好.xlsx中 Sheet3 表中空着的格子，并输出这些格子的坐标
+exl = load_workbook(filename=root_path + '用户行为偏好.xlsx')
+sheet3 = exl.get_sheet_by_name('Sheet3')
+# 直接通过sheet索引，sheet3.dimensions获取sheet数据区域
+print(sheet3.dimensions)
+cells = sheet3[sheet3.dimensions]
+for rows in cells:
+    for cell in rows:
+        if not cell.value:
+            # coordinate,返回位置坐标
+            print(f'坐标位置：{cell.coordinate}')
+# 练习题2：打开 test.xlsx 文件，找出文件中购买数量 buy_mount 超过5的单元格，并对其标红、加粗、加上红色边框
+workbook = load_workbook(root_path + 'test.xlsx')
+sheet1 = workbook.get_sheet_by_name('Sheet1')
+buy_mount = sheet1['B']
+# 设置字体样式
+side = Side(style='thin', color='FF0000')
+border = Border(left=side, right=side, top=side, bottom=side)
+font = Font(bold=True, color='FF0000')
+# 筛选满足条件的单元格
+for cell in buy_mount:
+    if isinstance(cell.value, float) and cell.value > 5:
+        cell.font: font
+        cell.border: border
+workbook.save(root_path + 'new_test.xlsx')
+
+# 将业务联系表.xlsx 拆分成以下两个 excel：
+# 客户信息表：客户名称 客户地址 客户方负责人 性别 联系电话 对接业务经理编号
+# 业务经理信息表：业务经理编号 所在分区 所在区域 业务经理姓名
+wb = load_workbook(root_path + '业务联系表.xlsx')
+sheet1 = wb.get_sheet_by_name('Sheet1')
+for i in sheet1[2]:
+    print(i.coordinate, i.value)
+# sheet1.max_row, sheet1.max_column
+# 客户信息表：客户名称 客户地址 客户方负责人 性别 联系电话 备注 对接业务经理编号
+cust_info = {'业务经理编号': 'A', '客户名称': 'B', '客户地址': 'C', '客户方负责人': 'D', '性别': 'E', '联系电话': 'F', '备注': 'G'}
+# 新建一个工作簿，并将默认sheet名称改成 客户信息
+cust_info_excel = Workbook()
+cust_info_sh = cust_info_excel.active
+cust_info_sh.title = '客户信息'
+# 遍历筛选，如果是需要的表头，就将该列的值复制到新的工作簿中的 客户信息 工作表中
+for i in sheet1[2]:
+    if i.value in cust_info:
+        # 遍历将这一列中除了第一个cell外的所有cell值复制到新表
+        for cell in sheet1[i.coordinate[0]]:
+            if cell.row == 1:
+                continue
+            cust_info_sh[f'{cust_info[i.value]}{cell.row - 1}'].value = cell.value
+# 业务经理信息表：业务经理编号 所在分区 所在区域 业务经理姓名
+manager_info = {'业务经理编号': 'A', '分区': 'B', '区域': 'C', '业务经理': 'D'}
+# 新建一个工作簿，并将默认sheet名称改成 客户信息
+manager_info_excel = Workbook()
+manager_info_sh = manager_info_excel.active
+manager_info_sh.title = '业务经理信息'
+# 遍历筛选，如果是需要的表头，就将该列的值复制到新的工作簿中的 业务经理信息 工作表中
+for i in sheet1[2]:
+    if i.value in manager_info:
+        # 遍历将这一列中除了第一个cell外的所有cell值复制到新表
+        for cell in sheet1[i.coordinate[0]]:
+            if cell.row == 1:
+                continue
+            manager_info_sh[f'{manager_info[i.value]}{cell.row - 1}'].value = cell.value
+# 保存 客户信息表 工作簿内容
+cust_info_excel.save(root_path + '客户信息表_xl.xlsx')
+# 保存 业务经理信息表 工作簿内容
+manager_info_excel.save(root_path + '业务经理信息表_xl.xlsx')
+
+# 实战练习1：将消费数据可视化生成带平均线的趋势图，存入excel，数据就是之前生成的模拟数据
+# 基础语法eg:
+root_path = './XLWings_test/'
+app = xw.App(visible=True, add_book=False)
+wb = app.books.add()
+shet = wb.sheets.add('first_shet')
+shet.range('A1').value = 'Datawhale'
+wb.save(root_path + 'xlwings_wb.xlsx')
+wb.close()
+app.quit()
